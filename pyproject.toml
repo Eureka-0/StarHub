@@ -1,0 +1,15 @@
+[project]
+name = "starhub"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["pygithub>=2.4.0"]
+
+[project.scripts]
+get-stars = "main:main"
+
+[tool.uv]
+package = true
+# Resolve for macOS, but not for Linux or Windows.
+environments = ["sys_platform == 'darwin'"]
