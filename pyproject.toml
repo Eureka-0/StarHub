@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["pygithub>=2.4.0"]
+dependencies = ["httpx>=0.27.2", "more-itertools>=10.5.0"]
 
 [project.scripts]
-get-stars = "main:main"
+manage-stars = "manage_stars:main"
 
 [tool.uv]
 package = true
