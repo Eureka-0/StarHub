@@ -1,17 +1,18 @@
 import asyncio
 import json
 import re
+from datetime import datetime
 from itertools import chain
 from typing import Any
 
 import httpx
 
-from config import GithubAPI
+from config import GitHubAPI, Paths
 
 
 def get_star_count() -> int:
     resp = httpx.get(
-        f"{GithubAPI.Base_URL}/starred?per_page=1", headers=GithubAPI.Header
+        f"{GitHubAPI.Base_URL}/starred?per_page=1", headers=GitHubAPI.Header
     ).raise_for_status()
     links = resp.headers["link"]
     result = re.search(r"per_page=1&page=(\d+)>; rel=\"last\"", links)
@@ -25,7 +26,7 @@ async def get_starred_repos_one_page(
     client: httpx.AsyncClient, per_page: int, page: int
 ) -> list[dict[str, Any]]:
     resp = await client.get(
-        f"{GithubAPI.Base_URL}/starred?per_page={per_page}&page={page}"
+        f"{GitHubAPI.Base_URL}/starred?per_page={per_page}&page={page}"
     )
     return json.loads(resp.text)
 
@@ -34,7 +35,7 @@ async def get_starred_repos():
     count = get_star_count()
     per_page = 60
     pages = range(1, count // per_page + 2)
-    client = httpx.AsyncClient(headers=GithubAPI.Header)
+    client = httpx.AsyncClient(headers=GitHubAPI.Header)
     tasks = [get_starred_repos_one_page(client, per_page, page) for page in pages]
     stars = await asyncio.gather(*tasks)
     await client.aclose()
@@ -45,24 +46,52 @@ def get_stars():
     return asyncio.run(get_starred_repos())
 
 
+def sort_key(line: str):
+    result = re.search(r"\| \[(.*?)\]", line)
+    if result:
+        x = result.group(1)
+    else:
+        raise ValueError(f"No matched name found in {line}")
+    return x.lower()
+
+
+def stars_to_md(stars: list[dict[str, Any]]) -> str:
+    table_head = (
+        "---\n"
+        + "cssClass: wide-table\n"
+        + f"User: {GitHubAPI.User_Name}\n"
+        + f"Total Repos: {len(stars)}\n"
+        + f"Last Updated: {datetime.now().strftime("%Y-%m-%d, %H:%M:%S")}\n"
+        + "---\n\n"
+        + "| Name | Description | Stars | Language "
+        + "| <div style='width:165px'>Created At</div> "
+        + "| <div style='width:165px'>Updated At</div> |\n"
+        + "| --- | --- | --- | --- | --- | --- |\n"
+    )
+    lines = []
+    for star in stars:
+        name = f"[{star['name']}]({star['html_url']})"
+        description = star["description"]
+        if description is None:
+            description = ""
+        else:
+            description = description.replace("|", r"\|")
+        stars_count = int(star["stargazers_count"])
+        if stars_count >= 1000:
+            stars_count = f"{stars_count / 1000:.1f}k"
+        language = star["language"]
+        crated_at = star["created_at"].replace("T", " ").replace("Z", "")
+        updated_at = star["updated_at"].replace("T", " ").replace("Z", "")
+        lines.append(
+            f"| {name} | {description} | {stars_count} | {language} "
+            f"| {crated_at} | {updated_at} |"
+        )
+    return table_head + "\n".join(sorted(lines, key=sort_key))
+
+
 def main():
     stars = get_stars()
-    # md_table = (
-    #     "---\n"
-    #     "cssClass: wide-table\n"
-    #     "---\n\n"
-    #     "| Name | Description | Topics |\n"
-    #     "| ---- | ----------- | ------ |\n"
-    # )
-    # for star in stars:
-    #     description = star.description
-    #     if description is None:
-    #         description = ""
-    #     else:
-    #         description = description.replace("|", r"\|")
-    #     md_table += (
-    #         f"| [{star.name}]({star.html_url}) | {description} | {star.topics} |\n"
-    #     )
+    md_table = stars_to_md(stars)
 
-    # with open(Paths.OBSIDIAN_VAULT / "stars.md", "w") as f:
-    #     f.write(md_table)
+    with open(Paths.Obsidian_Memo / "GitHub Stars.md", "w") as f:
+        f.write(md_table)
