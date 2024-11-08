@@ -61,11 +61,12 @@ def stars_to_md(stars: list[dict[str, Any]]) -> str:
         + "cssClass: wide-table\n"
         + f"User: {GitHubAPI.User_Name}\n"
         + f"Total Repos: {len(stars)}\n"
-        + f"Last Updated: {datetime.now().strftime("%Y-%m-%d, %H:%M:%S")}\n"
+        + "My Stars: https://github.com/Eureka-0?tab=stars\n"
+        + f"Last Updated: {datetime.now().strftime("%Y-%m-%d, %H:%M:%S")}, GMT+8\n"
         + "---\n\n"
         + "| Name | Description | Stars | Language "
-        + "| <div style='width:165px'>Created At</div> "
-        + "| <div style='width:165px'>Updated At</div> |\n"
+        + "| <div style='width:165px'>Created At (UTC)</div> "
+        + "| <div style='width:165px'>Updated At (UTC)</div> |\n"
         + "| --- | --- | --- | --- | --- | --- |\n"
     )
     lines = []
