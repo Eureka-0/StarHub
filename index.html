@@ -2,52 +2,148 @@
 <html>
 
 <head>
-    <title>Home</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>StarHub</title>
+
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"></script>
     <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <style>
+        .tabulator {
+            font-size: 16px;
+        }
+
+        .space {
+            display: inline-block;
+            width: 10px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Home</h1>
-    <p>Welcome to the home page!</p>
-    <div id="example-table"></div>
+    <div>
+        <h1>Starred Repositories</h1>
+        <span>User: Eureka-0</span>
+        <span class="space"></span>
+        <span id="total-count"></span>
+    </div>
+    <div id="stars-table"></div>
 
     <script>
-        //define data array
-        var tabledata = [
-            { id: 1, name: "Oli Bob", progress: 12, gender: "male", rating: 1, col: "red", dob: "19/02/1984", car: 1 },
-            { id: 2, name: "Mary May", progress: 1, gender: "female", rating: 2, col: "blue", dob: "14/05/1982", car: true },
-            { id: 3, name: "Christine Lobowski", progress: 42, gender: "female", rating: 0, col: "green", dob: "22/05/1982", car: "true" },
-            { id: 4, name: "Brendon Philips", progress: 100, gender: "male", rating: 1, col: "orange", dob: "01/08/1980" },
-            { id: 5, name: "Margret Marmajuke", progress: 16, gender: "female", rating: 5, col: "yellow", dob: "31/01/1999" },
-            { id: 6, name: "Frank Harbours", progress: 38, gender: "male", rating: 4, col: "red", dob: "12/05/1966", car: 1 },
-        ];
+        const GitHubAPI = {
+            Base_URL: 'https://api.github.com/users/Eureka-0',
+            Header: {
+                'Authorization': 'Bearer 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',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        };
 
-        var table = new Tabulator("#example-table", {
-            data: tabledata,           //load row data from array
-            layout: "fitColumns",      //fit columns to width of table
-            responsiveLayout: "hide",  //hide columns that don't fit on the table
-            addRowPos: "top",          //when adding a new row, add it to the top of the table
-            history: true,             //allow undo and redo actions on the table
-            pagination: "local",       //paginate the data
-            paginationSize: 7,         //allow 7 rows per page of data
-            paginationCounter: "rows", //display count of paginated rows in footer
-            movableColumns: true,      //allow column order to be changed
-            initialSort: [             //set the initial sort order of the data
-                { column: "name", dir: "asc" },
-            ],
-            columnDefaults: {
-                tooltip: true,         //show tool tips on cells
-            },
-            columns: [                 //define the table columns
-                { title: "Name", field: "name", editor: "input" },
-                { title: "Task Progress", field: "progress", hozAlign: "left", formatter: "progress", editor: true },
-                { title: "Gender", field: "gender", width: 95, editor: "select", editorParams: { values: ["male", "female"] } },
-                { title: "Rating", field: "rating", formatter: "star", hozAlign: "center", width: 100, editor: true },
-                { title: "Color", field: "col", width: 130, editor: "input" },
-                { title: "Date Of Birth", field: "dob", width: 130, sorter: "date", hozAlign: "center" },
-                { title: "Driver", field: "car", width: 90, hozAlign: "center", formatter: "tickCross", sorter: "boolean", editor: true },
-            ],
+        async function getStarCount() {
+            try {
+                const response = await axios.get(`${GitHubAPI.Base_URL}/starred?per_page=1`, {
+                    headers: GitHubAPI.Header
+                });
+
+                const links = response.headers['link'];
+                const result = /per_page=1&page=(\d+)>; rel="last"/.exec(links);
+
+                if (result) {
+                    return parseInt(result[1], 10);
+                } else {
+                    throw new Error(`No match found in ${links}`);
+                }
+            } catch (error) {
+                console.error('Error fetching star count:', error);
+                throw error;
+            }
+        }
+
+        async function getStarredReposOnePage(perPage, page) {
+            try {
+                const response = await axios.get(`${GitHubAPI.Base_URL}/starred?per_page=${perPage}&page=${page}`, {
+                    headers: GitHubAPI.Header
+                });
+                return response.data;
+            } catch (error) {
+                console.error(`Error fetching page ${page}:`, error);
+                throw error;
+            }
+        }
+
+        async function getStarredRepos() {
+            try {
+                const count = await getStarCount();
+                const perPage = 60;
+                const pages = Math.ceil(count / perPage);
+                const tasks = [];
+
+                for (let page = 1; page <= pages; page++) {
+                    tasks.push(getStarredReposOnePage(perPage, page));
+                }
+
+                const stars = await Promise.all(tasks);
+                const allStars = stars.flat(); // 将所有页面的结果合并到一个数组中
+                return allStars;
+            } catch (error) {
+                console.error('Error fetching starred repositories:', error);
+                throw error;
+            }
+        }
+
+        getStarredRepos().then(stars => {
+            const totalCount = stars.length;
+            $("#total-count").text(`Total starred repos: ${totalCount}`);
+            var table = new Tabulator("#stars-table", {
+                data: stars,
+                height: 900,
+                layout: "fitDataTable",
+                columnDefaults: {
+                    resizable: true,
+                },
+                columns: [
+                    {
+                        title: "Name", field: "name", formatter: "link", sorter: "string", vertAlign: "middle",
+                        formatterParams: { labelField: "name", urlField: "html_url" },
+                    },
+                    { title: "Description", field: "description", formatter: "textarea", width: 700 },
+                    {
+                        title: "Stars", field: "stargazers_count", hozAlign: "center", vertAlign: "middle",
+                        formatter: function (cell, formatterParams, onRendered) {
+                            value = cell.getValue();
+                            if (value >= 1000) {
+                                return parseFloat((value / 1000).toFixed(1)) + "k";
+                            } else {
+                                return value;
+                            }
+                        },
+                    },
+                    { title: "Language", field: "language", vertAlign: "middle", width: 130, sorter: "string" },
+                    {
+                        title: "Created At", field: "created_at", sorter: "datetime", hozAlign: "center",
+                        vertAlign: "middle", width: 200, sorterParams: {
+                            format: "iso",
+                            alignEmptyValues: "top",
+                        }
+                    },
+                    {
+                        title: "Updated At", field: "updated_at", sorter: "datetime", hozAlign: "center",
+                        vertAlign: "middle", width: 200, sorterParams: {
+                            format: "iso",
+                            alignEmptyValues: "top",
+                        }
+                    },
+                    {
+                        title: "Archived", field: "archived", hozAlign: "center", vertAlign: "middle",
+                    }
+                ],
+            });
+        }).catch(error => {
+            console.error('Error:', error);
         });
 
     </script>
