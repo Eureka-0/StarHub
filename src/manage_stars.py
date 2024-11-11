@@ -6,6 +6,7 @@ from itertools import chain
 from typing import Any
 
 import httpx
+from loguru import logger
 
 from config import GitHubAPI, Paths
 
@@ -87,12 +88,47 @@ def stars_to_md(stars: list[dict[str, Any]]) -> str:
             f"| {name} | {description} | {stars_count} | {language} "
             f"| {crated_at} | {updated_at} |"
         )
+
+        archived = star["archived"]
+        if archived:
+            logger.warning(f"Archived: {name}")
     return table_head + "\n".join(sorted(lines, key=sort_key))
+
+
+def extract_stars_from_md(md_table: str) -> set[str]:
+    lines = md_table.split("\n")
+    stars = []
+    for line in lines:
+        if not line.startswith("|"):
+            continue
+        name = line.split("|")[1].strip()
+        if name == "Name" or name == "---":
+            continue
+        result = re.search(r"\[(.*?)\]", name)
+        assert result
+        stars.append(result.group(1))
+    return set(stars)
 
 
 def main():
     stars = get_stars()
     md_table = stars_to_md(stars)
 
+    with open(Paths.Obsidian_Memo / "GitHub Stars.md", "r") as f:
+        old_md_table = f.read()
+
+    old_stars = extract_stars_from_md(old_md_table)
+    new_stars = set(star["name"] for star in stars)
+    diff1 = new_stars.difference(old_stars)
+    diff2 = old_stars.difference(new_stars)
+    if old_stars == set(star["name"] for star in stars):
+        return
+    elif diff1:
+        logger.info(f"New stars: {diff1}")
+    elif diff2:
+        logger.info(f"Unstarred: {diff2}")
+
     with open(Paths.Obsidian_Memo / "GitHub Stars.md", "w") as f:
         f.write(md_table)
+    logger.info("GitHub Stars.md updated.")
+    print()
