@@ -35,13 +35,17 @@
             display: inline-block;
             width: 10px;
         }
+
+        a:visited {
+            color: blue;
+        }
     </style>
 </head>
 
 <body>
     <div>
         <h1>Starred Repositories</h1>
-        <span>User: Eureka-0</span>
+        <span id="user"></span>
         <span class="space"></span>
         <span id="total-count"></span>
     </div>
@@ -49,12 +53,16 @@
 
     <script>
         const GitHubAPI = {
-            Base_URL: 'https://api.github.com/users/Eureka-0',
+            User: "Eureka-0",
+            get Base_URL() {
+                return `https://api.github.com/users/${this.User}`;
+            },
             Header: {
-                'Authorization': 'Bearer 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',
-                'Accept': 'application/vnd.github.v3+json'
+                "Accept": "application/vnd.github.v3+json"
             }
         };
+
+        $("#user").text(`User: ${GitHubAPI.User}`);
 
         async function getStarCount() {
             try {
@@ -108,12 +116,10 @@
             }
         }
 
-        getStarredRepos().then(stars => {
-            const totalCount = stars.length;
-            $("#total-count").text(`Total starred repos: ${totalCount}`);
+        function constructTable(stars) {
             var table = new Tabulator("#stars-table", {
                 data: stars,
-                height: 900,
+                height: "100%",
                 layout: "fitDataTable",
                 columnDefaults: {
                     resizable: true,
@@ -122,6 +128,7 @@
                     {
                         title: "Name", field: "name", formatter: "link", sorter: "string", vertAlign: "middle",
                         formatterParams: { labelField: "name", urlField: "html_url", target: "_blank", },
+                        headerFilter: "input", headerFilterPlaceholder: "Search by name...",
                     },
                     { title: "Description", field: "description", formatter: "textarea", width: 700 },
                     {
@@ -135,7 +142,13 @@
                             }
                         },
                     },
-                    { title: "Language", field: "language", vertAlign: "middle", width: 130, sorter: "string" },
+                    {
+                        title: "Language", field: "language", vertAlign: "middle", width: 130, sorter: "string",
+                        editor: "input", headerFilter: "list", headerFilterParams: {
+                            valuesLookup: true, clearable: true
+                        },
+                        headerFilterPlaceholder: "Filter...",
+                    },
                     {
                         title: "Created At", field: "created_at", sorter: "datetime", hozAlign: "center",
                         vertAlign: "middle", width: 200, sorterParams: {
@@ -155,6 +168,12 @@
                     }
                 ],
             });
+        }
+
+        getStarredRepos().then(stars => {
+            const totalCount = stars.length;
+            $("#total-count").text(`Total starred repos: ${totalCount}`);
+            constructTable(stars);
         }).catch(error => {
             console.error('Error:', error);
         });
