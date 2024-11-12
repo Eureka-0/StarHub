@@ -130,7 +130,10 @@
                         formatterParams: { labelField: "name", urlField: "html_url", target: "_blank", },
                         headerFilter: "input", headerFilterPlaceholder: "Search by name...",
                     },
-                    { title: "Description", field: "description", formatter: "textarea", width: 700 },
+                    {
+                        title: "Description", field: "description", formatter: "textarea", width: 700,
+                        headerFilter: "input", headerFilterPlaceholder: "Search by name...",
+                    },
                     {
                         title: "Stars", field: "stargazers_count", hozAlign: "center", vertAlign: "middle",
                         formatter: function (cell, formatterParams, onRendered) {
