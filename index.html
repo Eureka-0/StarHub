@@ -61,7 +61,6 @@
                 "Accept": "application/vnd.github.v3+json"
             }
         };
-
         $("#user").text(`User: ${GitHubAPI.User}`);
 
         async function getStarCount() {
@@ -132,7 +131,7 @@
                     },
                     {
                         title: "Description", field: "description", formatter: "textarea", width: 700,
-                        headerFilter: "input", headerFilterPlaceholder: "Search by name...",
+                        headerFilter: "input", headerFilterPlaceholder: "Search in description...",
                     },
                     {
                         title: "Stars", field: "stargazers_count", hozAlign: "center", vertAlign: "middle",
