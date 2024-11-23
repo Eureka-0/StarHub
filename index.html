@@ -1,186 +1,88 @@
 <!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>StarHub</title>
 
     <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
-    <link rel="mask-icon" href="favicon/favicon-32x32.png" color="#0b0b0f">
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="favicon/favicon-16x16.png"
+    />
+    <link rel="mask-icon" href="favicon/favicon-32x32.png" color="#0b0b0f" />
 
     <!-- Axios, for making HTTP requests -->
     <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
 
     <!-- Luxon, for sort date and datetime in Tabulator -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
+    ></script>
 
     <!-- Tabulator -->
-    <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+    <link
+      href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"
+    ></script>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- FileSaver.js -->
+    <script
+      type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"
+    ></script>
 
     <style>
-        .tabulator {
-            font-size: 16px;
-        }
+      .tabulator {
+        font-size: 16px;
+      }
 
-        .space {
-            display: inline-block;
-            width: 10px;
-        }
+      .space {
+        display: inline-block;
+        width: 10px;
+      }
 
-        a:visited {
-            color: blue;
-        }
+      a:visited {
+        color: blue;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div>
-        <h1>Starred Repositories</h1>
-        <span id="user"></span>
-        <span class="space"></span>
-        <span id="total-count"></span>
+      <h1>Starred Repositories</h1>
+      <span id="user"></span>
+      <span class="space"></span>
+      <span id="total-count"></span>
     </div>
     <div id="stars-table"></div>
 
-    <script>
-        const GitHubAPI = {
-            User: "Eureka-0",
-            get Base_URL() {
-                return `https://api.github.com/users/${this.User}`;
-            },
-            Header: {
-                "Accept": "application/vnd.github.v3+json"
-            }
-        };
-        $("#user").text(`User: ${GitHubAPI.User}`);
-
-        async function getStarCount() {
-            try {
-                const response = await axios.get(`${GitHubAPI.Base_URL}/starred?per_page=1`, {
-                    headers: GitHubAPI.Header
-                });
-
-                const links = response.headers['link'];
-                const result = /per_page=1&page=(\d+)>; rel="last"/.exec(links);
-
-                if (result) {
-                    return parseInt(result[1], 10);
-                } else {
-                    throw new Error(`No match found in ${links}`);
-                }
-            } catch (error) {
-                console.error('Error fetching star count:', error);
-                throw error;
-            }
-        }
-
-        async function getStarredReposOnePage(perPage, page) {
-            try {
-                const response = await axios.get(`${GitHubAPI.Base_URL}/starred?per_page=${perPage}&page=${page}`, {
-                    headers: GitHubAPI.Header
-                });
-                return response.data;
-            } catch (error) {
-                console.error(`Error fetching page ${page}:`, error);
-                throw error;
-            }
-        }
-
-        async function getStarredRepos() {
-            try {
-                const count = await getStarCount();
-                const perPage = 60;
-                const pages = Math.ceil(count / perPage);
-                const tasks = [];
-
-                for (let page = 1; page <= pages; page++) {
-                    tasks.push(getStarredReposOnePage(perPage, page));
-                }
-
-                const stars = await Promise.all(tasks);
-                const allStars = stars.flat(); // 将所有页面的结果合并到一个数组中
-                return allStars;
-            } catch (error) {
-                console.error('Error fetching starred repositories:', error);
-                throw error;
-            }
-        }
-
-        function constructTable(stars) {
-            var table = new Tabulator("#stars-table", {
-                data: stars,
-                height: "100%",
-                layout: "fitDataTable",
-                columnDefaults: {
-                    resizable: true,
-                },
-                columns: [
-                    {
-                        title: "Name", field: "name", formatter: "link", sorter: "string", vertAlign: "middle",
-                        formatterParams: { labelField: "name", urlField: "html_url", target: "_blank", },
-                        headerFilter: "input", headerFilterPlaceholder: "Search by name...",
-                    },
-                    {
-                        title: "Description", field: "description", formatter: "textarea", width: 700,
-                        headerFilter: "input", headerFilterPlaceholder: "Search in description...",
-                    },
-                    {
-                        title: "Stars", field: "stargazers_count", hozAlign: "center", vertAlign: "middle",
-                        formatter: function (cell, formatterParams, onRendered) {
-                            value = cell.getValue();
-                            if (value >= 1000) {
-                                return parseFloat((value / 1000).toFixed(1)) + "k";
-                            } else {
-                                return value;
-                            }
-                        },
-                    },
-                    {
-                        title: "Language", field: "language", vertAlign: "middle", width: 130, sorter: "string",
-                        editor: "input", headerFilter: "list", headerFilterParams: {
-                            valuesLookup: true, clearable: true
-                        },
-                        headerFilterPlaceholder: "Filter...",
-                    },
-                    {
-                        title: "Created At", field: "created_at", sorter: "datetime", hozAlign: "center",
-                        vertAlign: "middle", width: 200, sorterParams: {
-                            format: "iso",
-                            alignEmptyValues: "top",
-                        }
-                    },
-                    {
-                        title: "Updated At", field: "updated_at", sorter: "datetime", hozAlign: "center",
-                        vertAlign: "middle", width: 200, sorterParams: {
-                            format: "iso",
-                            alignEmptyValues: "top",
-                        }
-                    },
-                    {
-                        title: "Archived", field: "archived", hozAlign: "center", vertAlign: "middle",
-                    }
-                ],
-            });
-        }
-
-        getStarredRepos().then(stars => {
-            const totalCount = stars.length;
-            $("#total-count").text(`Total starred repos: ${totalCount}`);
-            constructTable(stars);
-        }).catch(error => {
-            console.error('Error:', error);
-        });
-
-    </script>
-</body>
-
+    <script src="src/fetch_stars.js"></script>
+    <script src="src/create_table.js"></script>
+  </body>
 </html>
