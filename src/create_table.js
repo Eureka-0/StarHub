@@ -74,7 +74,7 @@ function constructTable(stars) {
         columns: [
             {
                 title: "Name", field: "name", formatter: "link", sorter: "string",
-                vertAlign: "middle", headerFilter: "input",
+                vertAlign: "middle", headerFilter: "input", width: 200,
                 headerFilterPlaceholder: "Search by name...",
                 formatterParams: { labelField: "name", urlField: "html_url", target: "_blank" },
             },
