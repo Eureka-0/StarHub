@@ -44,15 +44,10 @@ new gridjs.Grid({
         { name: "Created At", sort: true, formatter: timeFormatter },
         { name: "Updated At", sort: true, formatter: timeFormatter },
     ],
-    pagination: {
-        limit: 50,
-        server: {
-            url: (_, page, limit) => `/api/starred?per_page=${limit}&page=${page + 1}`,
-        }
-    },
+    pagination: { limit: 50, },
     server: {
         url: `/api/starred`,
-        then: data => data.items.map(repo => [
+        then: data => data.map(repo => [
             [repo.name, repo.html_url],
             repo.description,
             repo.stargazers_count,
@@ -60,7 +55,6 @@ new gridjs.Grid({
             repo.created_at,
             repo.updated_at,
         ]),
-        total: data => data.total,
+        total: data => data.length,
     }
 }).render(document.getElementById("stars-table"));
-
