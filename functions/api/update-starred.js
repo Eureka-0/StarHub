@@ -1,7 +1,19 @@
 // functions/api/update-starred.js
 
 export async function onRequest(context) {
-  const { env } = context;
+  const { env, request } = context;
+
+  const url = new URL(request.url);
+  const keyFromClient = url.searchParams.get("key");
+  const origin = request.headers.get("Origin");
+
+  // 简单的认证机制：如果设置了 UPDATE_KEY，则对不带 Origin 头的请求进行校验
+  if (env.UPDATE_KEY && !origin && env.UPDATE_KEY !== keyFromClient) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const username = env.GITHUB_USERNAME;
   const token = env.GITHUB_TOKEN;
