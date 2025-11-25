@@ -1,3 +1,18 @@
+// 先填充 header 中的 GitHub 用户链接
+fetch('/api/starred?page=1&per_page=1')
+    .then(res => res.json())
+    .then(data => {
+        const link = document.getElementById('github-user-link');
+        if (link && data.username && data.profileUrl) {
+            link.textContent = data.username;
+            link.href = data.profileUrl;
+        }
+    })
+    .catch(err => {
+        console.error('Failed to load GitHub user info:', err);
+    });
+
+
 function nameFormatter(cell) {
     const [name, url] = cell;
     return gridjs.html(`<a href="${url}" target="_blank" class="name-cell">${name}</a>`);

@@ -1,14 +1,12 @@
-// functions/api/starred.js
-
 export async function onRequest(context) {
     const { request, env } = context;
     const url = new URL(request.url);
 
     const page = Number(url.searchParams.get("page") || "1");
-    const perPage = Number(url.searchParams.get("per_page") || "30");
+    const perPage = Number(url.searchParams.get("per_page") || "50");
 
-    const username = env.GITHUB_USERNAME; // 你要展示的 GitHub 用户名
-    const token = env.GITHUB_TOKEN; // 在 Cloudflare 项目设置里配置
+    const username = env.GITHUB_USERNAME; // 你要展示的 GitHub 用户名, 在 Cloudflare 项目设置里配置
+    const token = env.GITHUB_TOKEN; // GitHub 访问令牌, 在 Cloudflare 项目设置里配置
 
     const ghHeaders = {
         "Accept": "application/vnd.github.v3+json",
@@ -71,7 +69,7 @@ export async function onRequest(context) {
 
     // ---------- 3. 返回 JSON 给前端 ----------
     return new Response(
-        JSON.stringify({ items, total }),
+        JSON.stringify({ items, total, username, profileUrl: `https://github.com/${username}`, }),
         {
             headers: {
                 "Content-Type": "application/json",
