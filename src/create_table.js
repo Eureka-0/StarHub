@@ -1,125 +1,124 @@
-const GitHubAPI = {
-    User: "Eureka-0",
-    get Base_URL() {
-        return `https://api.github.com/users/${this.User}`;
-    },
-    Header: {
-        Accept: "application/vnd.github.v3+json",
-    },
-};
-$("#user").text(`User: ${GitHubAPI.User}`);
+// ===== 基本配置 =====
+const GITHUB_USER = "Eureka-0";
+const BASE_URL = `https://api.github.com/users/${GITHUB_USER}`;
+const HEADERS = {
+    Accept: "application/vnd.github.v3+json",
+}
 
-async function getStarCount() {
-    try {
-        const response = await axios.get(
-            `${GitHubAPI.Base_URL}/starred?per_page=1`,
-            { headers: GitHubAPI.Header }
-        );
+const tableContainer = document.getElementById("stars-table");
 
-        const links = response.headers["link"];
-        const result = /per_page=1&page=(\d+)>; rel="last"/.exec(links);
 
-        if (result) {
-            return parseInt(result[1], 10);
-        } else {
-            throw new Error(`No match found in ${links}`);
+// ===== 工具函数 =====
+async function fetchStarredCount() {
+    const response = await fetch(
+        `${BASE_URL}/starred?per_page=1`,
+        { headers: HEADERS }
+    );
+
+    if (!response.ok) {
+        // 尝试输出一些更友好的错误信息（比如被限流）
+        const remaining = response.headers.get("X-RateLimit-Remaining");
+        if (response.status === 403 && remaining === "0") {
+            throw new Error("GitHub API 已达到未认证访问的速率上限，请稍后再试。");
         }
-    } catch (error) {
-        console.error("Error fetching star count:", error);
-        throw error;
+        throw new Error(`GitHub API 请求失败，状态码: ${response.status}`);
     }
-}
 
-async function getStarredReposOnePage(perPage, page) {
-    try {
-        const response = await axios.get(
-            `${GitHubAPI.Base_URL}/starred?per_page=${perPage}&page=${page}`,
-            { headers: GitHubAPI.Header }
-        );
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching page ${page}:`, error);
-        throw error;
-    }
-}
+    const link = response.headers.get("link");
 
-async function getStarredRepos() {
-    try {
-        const count = await getStarCount();
-        const perPage = 60;
-        const pages = Math.ceil(count / perPage);
-        const tasks = [];
-
-        for (let page = 1; page <= pages; page++) {
-            tasks.push(getStarredReposOnePage(perPage, page));
+    if (link) {
+        // 格式类似：
+        // <https://api.github.com/.../starred?per_page=1&page=2>; rel="next",
+        // <https://api.github.com/.../starred?per_page=1&page=468>; rel="last"
+        const match = link.match(/<[^>]*[?&]page=(\d+)[^>]*>;\s*rel="last"/);
+        if (match) {
+            // 因为 per_page=1，所以页数 = 总条数
+            return parseInt(match[1], 10);
         }
+    }
 
-        const stars = await Promise.all(tasks);
-        const allStars = stars.flat(); // 将所有页面的结果合并到一个数组中
-        return allStars;
-    } catch (error) {
-        console.error("Error fetching starred repositories:", error);
-        throw error;
+    // 没有 Link 头，说明总数 <= 1，直接用 body 的长度
+    const data = await response.json();
+    return Array.isArray(data) ? data.length : 0;
+}
+
+function nameFormatter(cell) {
+    const [name, url] = cell;
+    return gridjs.html(`<a href="${url}" target="_blank" class="name-cell">${name}</a>`);
+}
+
+
+function starCountFormatter(cell) {
+    if (cell >= 1000) {
+        return (cell / 1000).toFixed(1) + "k";
+    } else {
+        return cell.toString();
     }
 }
 
-function constructTable(stars) {
-    var table = new Tabulator("#stars-table", {
-        data: stars,
-        height: "100%",
-        layout: "fitDataTable",
-        columnDefaults: {
-            resizable: true,
-        },
+function timeFormatter(cell) {
+    const date = new Date(cell);
+    return date.toISOString().replace('T', ' ').split('.')[0].concat(' UTC');
+}
+
+
+// ===== 渲染 Grid.js =====
+function renderGrid(totalCount) {
+    new gridjs.Grid({
+        width: "100%",
+        search: true,
         columns: [
-            {
-                title: "Name", field: "name", formatter: "link", sorter: "string",
-                vertAlign: "middle", headerFilter: "input", width: 280,
-                headerFilterPlaceholder: "Search by name...",
-                formatterParams: { labelField: "name", urlField: "html_url", target: "_blank" },
-            },
-            {
-                title: "Description", field: "description", formatter: "textarea", width: 700,
-                headerFilter: "input", headerFilterPlaceholder: "Search in description...",
-            },
-            {
-                title: "Stars", field: "stargazers_count", hozAlign: "center", vertAlign: "middle",
-                formatter: function (cell, formatterParams, onRendered) {
-                    value = cell.getValue();
-                    if (value >= 1000) {
-                        return parseFloat((value / 1000).toFixed(1)) + "k";
-                    } else {
-                        return value;
-                    }
-                },
-            },
-            {
-                title: "Language", field: "language", vertAlign: "middle", width: 130,
-                sorter: "string", editor: "input", headerFilter: "list",
-                headerFilterParams: { valuesLookup: true, clearable: true },
-                headerFilterPlaceholder: "Filter...",
-            },
-            {
-                title: "Created At", field: "created_at", sorter: "datetime", hozAlign: "center",
-                vertAlign: "middle", width: 200,
-                sorterParams: { format: "iso", alignEmptyValues: "top" },
-            },
-            {
-                title: "Updated At", field: "updated_at", sorter: "datetime", hozAlign: "center",
-                vertAlign: "middle", width: 200,
-                sorterParams: { format: "iso", alignEmptyValues: "top" },
-            },
-            {
-                title: "Archived", field: "archived", hozAlign: "center", vertAlign: "middle",
-            },
+            { name: "Name", sort: true, width: "200px", formatter: nameFormatter },
+            { name: "Description" },
+            { name: "Stars", sort: true, width: "130px", formatter: starCountFormatter },
+            { name: "Language", sort: true, width: "160px" },
+            { name: "Created At", sort: true, formatter: timeFormatter },
+            { name: "Updated At", sort: true, formatter: timeFormatter },
         ],
-    });
+        pagination: {
+            limit: 50,
+            server: {
+                url: (_, page, limit) => `${BASE_URL}/starred?per_page=${limit}&page=${page + 1}`,
+            }
+        },
+        server: {
+            url: `${BASE_URL}/starred`,
+            headers: HEADERS,
+            then: data => data.map(repo => [
+                [repo.name, repo.html_url],
+                repo.description,
+                repo.stargazers_count,
+                repo.language,
+                repo.created_at,
+                repo.updated_at,
+            ]),
+            total: () => totalCount,
+        }
+    }).render(tableContainer);
 }
 
-getStarredRepos().then((stars) => {
-    const totalCount = stars.length;
-    $("#total-count").text(`Total starred repos: ${totalCount}`);
-    constructTable(stars);
-}).catch((error) => {
-    console.error("Error:", error);
-});
+
+// ===== 初始化逻辑 =====
+async function init() {
+    // 简单的加载状态
+    tableContainer.innerHTML =
+        '<div class="loading">Loading your starred repositories...</div>';
+
+    try {
+        const totalCount = await fetchStarredCount();
+        console.log("Total starred repositories:", totalCount);
+
+        tableContainer.innerHTML = ""; // 清空加载提示
+        renderGrid(totalCount);
+    } catch (error) {
+        console.error(error);
+        tableContainer.innerHTML = `
+      <div class="error">
+        <p>加载 starred 仓库失败：</p>
+        <pre>${error.message}</pre>
+      </div>
+    `;
+    }
+}
+
+init();
