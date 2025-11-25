@@ -8,7 +8,7 @@ fetch('/api/starred')
             link.href = data.profileUrl;
         }
 
-        rows = data.items.map(repo => [
+        rows = data.cached.items.map(repo => [
             [repo.name, repo.html_url],
             repo.description,
             repo.stargazers_count,

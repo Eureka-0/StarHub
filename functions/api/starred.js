@@ -19,7 +19,7 @@ export async function onRequest(context) {
     // 直接把整份 JSON 返回给前端
     return new Response(
         JSON.stringify({
-            items: JSON.parse(cached),
+            cached: JSON.parse(cached),
             username: username,
             profileUrl: `https://github.com/${username}`,
         }),
