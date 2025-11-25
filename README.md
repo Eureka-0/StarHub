@@ -64,7 +64,7 @@ Configured in **Cloudflare Pages → Settings → Environment Variables**:
 
 - `GITHUB_USERNAME` – GitHub username whose starred repositories you want to display
 - `UPDATE_KEY` - A secret key used to authorize requests to `/api/update-starred`. Set this to a random string and use the same string when calling the update endpoint. This should be identical to the `UPDATE_KEY` used in GitHub Actions if you set up automatic updates.
-- `GITHUB_TOKEN` – (optional) GitHub personal access token used for authenticated requests
+- `GITHUB_TOKEN` – (optional) GitHub personal access token used for authenticated requests. Warn: make sure the token is kept secret and not exposed to the frontend.
 
 > If `GITHUB_TOKEN` is not set, the app relies on unauthenticated GitHub API calls and may quickly hit rate limits.
 
