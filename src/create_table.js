@@ -68,10 +68,10 @@ function renderGrid(totalCount) {
         width: "100%",
         search: true,
         columns: [
-            { name: "Name", sort: true, width: "200px", formatter: nameFormatter },
+            { name: "Name", sort: true, formatter: nameFormatter },
             { name: "Description" },
-            { name: "Stars", sort: true, width: "130px", formatter: starCountFormatter },
-            { name: "Language", sort: true, width: "160px" },
+            { name: "Stars", sort: true, formatter: starCountFormatter },
+            { name: "Language", sort: true },
             { name: "Created At", sort: true, formatter: timeFormatter },
             { name: "Updated At", sort: true, formatter: timeFormatter },
         ],

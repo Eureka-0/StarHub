@@ -16,29 +16,30 @@
     <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
     <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
 
-    <style>
-        #stars-table {
-            margin-right: 10px;
-        }
-
-        .gridjs-table td:nth-child(1) .name-cell {
-            white-space: normal;
-            word-break: break-all;
-        }
-
-        a:visited {
-            color: blue;
-        }
-    </style>
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="src/style.css" />
 </head>
 
 <body>
-    <div>
-        <h1>Starred Repositories</h1>
+    <div class="page">
+        <header class="page-header">
+            <h1>⭐ My Starred Repositories</h1>
+            <p>GitHub user: <a href="https://github.com/Eureka-0"
+                    target="_blank">Eureka-0</a></p>
+        </header>
+
+        <main class="page-main">
+            <section class="card">
+                <div id="stars-table"></div>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <small>Data from GitHub REST API · Built with Grid.js</small>
+        </footer>
     </div>
 
-    <div id="stars-table"></div>
-
+    <!-- Create Table Script -->
     <script src="src/create_table.js"></script>
 </body>
 
