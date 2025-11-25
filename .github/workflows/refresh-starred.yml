@@ -1,0 +1,19 @@
+name: Refresh Starred Cache
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs daily at 0 AM UTC
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call /api/update-starred
+        run: |
+          set -e
+          echo "Calling Cloudflare Pages function endpoint..."
+          RESPONSE=$(curl --fail -sS -X POST "https://starhub-3zj.pages.dev/api/update-starred?key=${{ secrets.UPDATE_KEY }}")
+          echo "Response from server:"
+          echo "$RESPONSE"
