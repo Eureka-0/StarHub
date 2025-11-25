@@ -27,7 +27,7 @@ fetch('/api/starred')
 // 刷新按钮：调用 /api/update-starred，然后重新渲染
 document.getElementById('refresh-btn').addEventListener('click', async () => {
     try {
-        const resp = await fetch('/api/update-starred', { method: 'POST' });
+        const resp = await fetch('/api/update-starred');
         if (!resp.ok) {
             throw new Error('Update failed');
         }
