@@ -8,15 +8,7 @@ fetch('/api/starred')
             link.href = data.profileUrl;
         }
 
-        rows = data.cached.items.map(repo => [
-            [repo.name, repo.html_url],
-            repo.description,
-            repo.stargazers_count,
-            repo.language,
-            repo.created_at,
-            repo.updated_at,
-        ]);
-
+        rows = makeRows(data);
         renderGrid(rows);
     })
     .catch(err => {
@@ -38,15 +30,7 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
         fetch('/api/starred')
             .then(res => res.json())
             .then(data => {
-                const rows = data.items.map(repo => [
-                    [repo.name, repo.html_url],
-                    repo.description,
-                    repo.stargazers_count,
-                    repo.language,
-                    repo.created_at,
-                    repo.updated_at,
-                ]);
-
+                rows = makeRows(data);
                 renderGrid(rows);
             })
             .catch(err => {
@@ -59,6 +43,16 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
     }
 });
 
+function makeRows(data) {
+    return data.cached.items.map(repo => [
+        [repo.name, repo.html_url],
+        repo.description,
+        repo.stargazers_count,
+        repo.language,
+        repo.created_at,
+        repo.updated_at,
+    ]);
+}
 
 function nameFormatter(cell) {
     const [name, url] = cell;
