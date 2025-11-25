@@ -1,23 +1,35 @@
-// 先填充 header 中的 GitHub 用户链接
-fetch('/api/starred')
-    .then(res => res.json())
+let grid;
+
+const tableContainer = document.getElementById('stars-table');
+const userLink = document.getElementById('github-user-link');
+const refreshBtn = document.getElementById('refresh-btn');
+
+// 初始化加载
+loadStarred()
     .then(data => {
-        const link = document.getElementById('github-user-link');
-        if (link && data.username && data.profileUrl) {
-            link.textContent = data.username;
-            link.href = data.profileUrl;
+        if (userLink && data.username && data.profileUrl) {
+            userLink.textContent = data.username;
+            userLink.href = data.profileUrl;
         }
 
-        rows = makeRows(data);
+        const rows = makeRows(data);
         renderGrid(rows);
     })
     .catch(err => {
         console.error('Failed to load GitHub user info:', err);
+        tableContainer.innerHTML = `<div class="error">${err.message}</div>`;
     });
 
 
 // 刷新按钮：调用 /api/update-starred，然后重新渲染
-document.getElementById('refresh-btn').addEventListener('click', async () => {
+refreshBtn.addEventListener('click', async () => {
+    const originalText = refreshBtn.textContent;
+
+    // 按钮进入加载状态
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add('is-loading');
+    refreshBtn.textContent = 'Refreshing…';
+
     try {
         const resp = await fetch('/api/update-starred', { method: 'POST' });
         if (!resp.ok) {
@@ -27,22 +39,33 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
         console.log('Updated:', result);
 
         // 更新完成后重新拉取并渲染
-        fetch('/api/starred')
-            .then(res => res.json())
-            .then(data => {
-                rows = makeRows(data);
-                document.getElementById('stars-table').innerHTML = '';
-                renderGrid(rows);
-            })
-            .catch(err => {
-                console.error('Failed to reload starred repos:', err);
-                alert('刷新失败，请查看控制台');
-            });
+        const data = await loadStarred();
+        const rows = makeRows(data);
+        renderGrid(rows);
     } catch (err) {
         console.error(err);
         alert('刷新失败，请查看控制台');
+    } finally {
+        // 恢复按钮状态
+        refreshBtn.disabled = false;
+        refreshBtn.classList.remove('is-loading');
+        refreshBtn.textContent = originalText;
     }
 });
+
+async function loadStarred() {
+    tableContainer.innerHTML = '<div class="loading">Loading starred repositories…</div>';
+
+    const res = await fetch('/api/starred');
+    if (!res.ok) {
+        // 尝试解析后端的 error 字段
+        const errorBody = await res.json().catch(() => ({}));
+        const message = errorBody.error || `Failed to load starred repos (status ${res.status})`;
+        throw new Error(message);
+    }
+
+    return res.json();
+}
 
 function makeRows(data) {
     return data.cached.items.map(repo => [
@@ -62,10 +85,11 @@ function nameFormatter(cell) {
 
 function starCountFormatter(cell) {
     if (cell >= 1000) {
-        return (cell / 1000).toFixed(1) + "k";
-    } else {
-        return cell.toString();
+        return (cell / 1000)
+            .toFixed(1)
+            .replace(/\.0$/, '') + 'k';
     }
+    return cell.toString();
 }
 
 function timeFormatter(cell) {
@@ -75,7 +99,12 @@ function timeFormatter(cell) {
 
 // ===== 渲染 Grid.js =====
 function renderGrid(rows) {
-    new gridjs.Grid({
+    if (grid) {
+        grid.updateConfig({ data: rows }).forceRender();
+        return;
+    }
+
+    grid = new gridjs.Grid({
         width: "100%",
         search: true,
         columns: [

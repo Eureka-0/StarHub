@@ -320,3 +320,76 @@ body {
     background-color: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(209, 213, 219, 0.8);
 }
+
+/* Refresh 按钮基础样式 */
+#refresh-btn {
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: var(--radius-hover);
+    border: 1px solid rgba(156, 163, 175, 0.7);
+    background-color: #ffffff;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    cursor: pointer;
+    vertical-align: middle;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        opacity 0.15s ease;
+}
+
+#refresh-btn:hover {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    border-color: rgba(129, 140, 248, 0.9);
+}
+
+#refresh-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+    border-color: var(--accent);
+}
+
+#refresh-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* 刷新中状态：配合 JS 添加 .is-loading 类使用 */
+#refresh-btn.is-loading {
+    color: var(--muted);
+    border-color: rgba(156, 163, 175, 0.7);
+    background-color: #f9fafb;
+    cursor: wait;
+    padding-left: 22px;
+    /* 给左侧 loading 图标留空间 */
+    position: relative;
+}
+
+#refresh-btn.is-loading::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+
+    border-radius: 999px;
+    border: 2px solid rgba(156, 163, 175, 0.6);
+    border-top-color: var(--accent);
+    border-right-color: var(--accent);
+
+    animation: refresh-spin 0.7s linear infinite;
+}
+
+/* loading 小圆圈旋转动画 */
+@keyframes refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
