@@ -31,6 +31,7 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
             .then(res => res.json())
             .then(data => {
                 rows = makeRows(data);
+                document.getElementById('stars-table').innerHTML = '';
                 renderGrid(rows);
             })
             .catch(err => {
