@@ -51,6 +51,7 @@ async function handleRefresh() {
 
         // 更新完成后重新拉取并渲染
         const data = await loadStarred();
+        tableContainer.innerHTML = '';
         const rows = makeRows(data);
         renderGrid(rows);
     } catch (err) {

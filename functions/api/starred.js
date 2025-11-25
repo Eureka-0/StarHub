@@ -10,7 +10,7 @@ export async function onRequest(context) {
         // 还没初始化缓存，提示前端先调用 /api/update-starred
         return new Response(
             JSON.stringify({
-                error: "No cached data. Please run /api/update-starred first.",
+                error: "No cached data. Please click the Refresh button first.",
             }),
             { status: 404, headers: { "Content-Type": "application/json" } }
         );
