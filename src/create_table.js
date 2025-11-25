@@ -4,9 +4,20 @@ const tableContainer = document.getElementById('stars-table');
 const userLink = document.getElementById('github-user-link');
 const refreshBtn = document.getElementById('refresh-btn');
 
+initializa();
+
+// 绑定刷新按钮事件
+if (refreshBtn) {
+    refreshBtn.addEventListener('click', handleRefresh);
+}
+
 // 初始化加载
-loadStarred()
-    .then(data => {
+async function initializa() {
+    tableContainer.innerHTML = '<div class="loading">Loading starred repositories…</div>';
+
+    try {
+        const data = await loadStarred()
+
         if (userLink && data.username && data.profileUrl) {
             userLink.textContent = data.username;
             userLink.href = data.profileUrl;
@@ -15,15 +26,14 @@ loadStarred()
         const rows = makeRows(data);
         tableContainer.innerHTML = '';
         renderGrid(rows);
-    })
-    .catch(err => {
+    } catch (err) {
         console.error('Failed to load GitHub user info:', err);
         tableContainer.innerHTML = `<div class="error">${err.message}</div>`;
-    });
-
+    }
+}
 
 // 刷新按钮：调用 /api/update-starred，然后重新渲染
-refreshBtn.addEventListener('click', async () => {
+async function handleRefresh() {
     const originalText = refreshBtn.textContent;
 
     // 按钮进入加载状态
@@ -52,11 +62,9 @@ refreshBtn.addEventListener('click', async () => {
         refreshBtn.classList.remove('is-loading');
         refreshBtn.textContent = originalText;
     }
-});
+}
 
 async function loadStarred() {
-    tableContainer.innerHTML = '<div class="loading">Loading starred repositories…</div>';
-
     const res = await fetch('/api/starred');
     if (!res.ok) {
         // 尝试解析后端的 error 字段
