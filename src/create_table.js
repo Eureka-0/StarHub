@@ -13,6 +13,7 @@ loadStarred()
         }
 
         const rows = makeRows(data);
+        tableContainer.innerHTML = '';
         renderGrid(rows);
     })
     .catch(err => {
@@ -117,5 +118,5 @@ function renderGrid(rows) {
         ],
         data: rows,
         pagination: { limit: 50 },
-    }).render(document.getElementById("stars-table"));
+    }).render(tableContainer);
 }

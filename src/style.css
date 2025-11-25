@@ -365,7 +365,7 @@ body {
     border-color: rgba(156, 163, 175, 0.7);
     background-color: #f9fafb;
     cursor: wait;
-    padding-left: 22px;
+    padding-left: 30px;
     /* 给左侧 loading 图标留空间 */
     position: relative;
 }
