@@ -1,0 +1,11 @@
+name = "starhub"
+compatibility_date = "2025-11-25"
+
+pages_build_output_dir = "."
+
+[vars]
+GITHUB_USERNAME = "Eureka-0"
+
+[[kv_namespaces]]
+binding = "STARRED_CACHE"
+id = "ef7e151f014c4564aa7d4eca6c1cb098"

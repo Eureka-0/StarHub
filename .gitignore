@@ -6,6 +6,12 @@ dist/
 wheels/
 *.egg-info
 
+# Node modules
+node_modules/
+
+# Wrangler
+.wrangler/
+
 # Virtual environments
 .venv
 .python-version
