@@ -80,7 +80,7 @@ async function loadStarred() {
 
 function makeRows(data) {
   return data.cached.items.map((repo) => [
-    [repo.name, repo.html_url],
+    `<a href="${repo.html_url}" target="_blank" class="name-cell">${repo.name}</a>`,
     repo.description,
     repo.stargazers_count,
     repo.language,
@@ -90,8 +90,7 @@ function makeRows(data) {
 }
 
 function nameFormatter(cell) {
-  const [name, url] = cell;
-  return gridjs.html(`<a href="${url}" target="_blank" class="name-cell">${name}</a>`);
+  return gridjs.html(cell);
 }
 
 function starCountFormatter(cell) {
